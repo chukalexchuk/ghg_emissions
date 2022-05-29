@@ -1,14 +1,15 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
 from PIL import Image
+from helper import calculate_emissions
 
-# from helper import sqlite_setup
-
+logo_page = Image.open("logo_page.png")
 image = Image.open("logo.png")
 st.set_page_config(
     page_title="GHG Emissions Calculator",
-    page_icon=image,
+    page_icon=logo_page,
     layout="wide",
     menu_items={
         # 'Get Help': '',
@@ -35,13 +36,14 @@ def app():
         # Select emission factors that are applicable for a company
         selected_sources = st.multiselect("Select emission source you want to calculate", options=emiss_factors)
         all_options = st.checkbox("Select all options")
-
         if all_options:
             selected_sources = emiss_factors
 
-        with st.expander("Do you want to add more sources?"):
-            selected_sources_extra = st.multiselect("Select emission sources",
-                                                    options=emiss_factors)
+        # adding extra source of emissions
+        add_extra_source = st.checkbox("Add additional source")
+        if add_extra_source:
+            extra_source_selected = st.multiselect("Select additional source you want to calculate",
+                                                   options=emiss_factors)
 
     ####################################################################################
     # Page
@@ -50,68 +52,40 @@ def app():
     total_df = pd.DataFrame()
     count = 0
 
-    for item in selected_sources:
-        st.subheader(item)
+    for source in selected_sources:
+        st.subheader(source)
         count += 1
-
-        selected_level1 = st.selectbox("Level - 1 source:",
-                                       options=(guide_df["Level.1"][guide_df["Level"] == item]).unique(), key=count)
-
-        selected_level2 = st.selectbox("Level - 2 source",
-                                       options=(guide_df["Level.2"][guide_df["Level.1"] == selected_level1]).unique(),
-                                       key=count)
-
-        selected_level3 = st.selectbox("Level - 3 source",
-                                       options=(guide_df["Level.3"][guide_df["Level.2"] == selected_level2]).unique(),
-                                       key=count)
-
-        if selected_level1 == "Water supply":
-            selected_text = st.selectbox("Level - 4 units",
-                                         options=(
-                                             guide_df["Unit"][guide_df["Level.1"] == selected_level1]).unique(),
-                                         key=count)
-
-        elif selected_level3 == "None":
-            selected_text = st.selectbox("Level - 4 source",
-                                         options=(
-                                             guide_df["Column Text"][guide_df["Level.2"] == selected_level2]).unique(),
-                                         key=count)
-
-        else:
-            selected_text = st.selectbox("Level - 4 source", options=(
-                guide_df["Column Text"][guide_df["Level.3"] == selected_level3]).unique(), key=count)
-
-        if item == "Water supply":
-            units = selected_text
-            value = st.number_input(f"Enter value for {selected_level1} in {units}", key=count)
-
-        else:
-            units = guide_df["Unit"][guide_df["Column Text"] == selected_text].unique()
-            value = st.number_input(f"Enter value for {selected_text} in {units[0]}", key=count)
-
-        if item == "Water supply":
-            ghg_emiss = guide_df[["Scope", "GHG", "GHG Emission factor"]][
-                                                                    (guide_df["Level.1"] == selected_level1) &
-                                                                    (guide_df["Unit"] == selected_text)
-            ]
-        else:
-            ghg_emiss = guide_df[["Scope", "GHG", "GHG Emission factor"]][
-                                                                     (guide_df["Level.1"] == selected_level1) &
-                                                                     (guide_df["Level.2"] == selected_level2) &
-                                                                     (guide_df["Level.3"] == selected_level3) &
-                                                                     (guide_df["Column Text"] == selected_text) &
-                                                                     (guide_df["Unit"] == units[0])
-                                                                     ]
-
-        emission_factors = pd.to_numeric(ghg_emiss["GHG Emission factor"], errors='coerce')
-        ghg_emiss[f"{selected_level2} {selected_text} emissions"] = emission_factors * value
-
-        st.write(ghg_emiss)
-
+        ghg_emiss = calculate_emissions(guide_df, source, count)
         total_df = total_df.append(ghg_emiss)
-    st.write(total_df)
-    x = total_df[total_df.GHG == "CO2e"]
-    st.info(x.sum(axis=0, skipna=True))
+
+    if add_extra_source:
+        for extra_source in extra_source_selected:
+            st.subheader(extra_source)
+            count += 2
+            ghg_emiss = calculate_emissions(guide_df, extra_source, count)
+            total_df = total_df.append(ghg_emiss)
+    else:
+        pass
+
+    # generate dataframe with results
+    try:
+        # group by Scope
+        df_scope_ghg = total_df.groupby(['Scope']).sum()
+        # create bar chart
+        fig_1 = px.bar(df_scope_ghg)
+        fig_1.update(layout_showlegend=False)
+        st.plotly_chart(fig_1, use_container_width=True)
+
+        # group by GHG gas
+        df_ghg = total_df.groupby(['GHG']).sum()
+        df_ghg = df_ghg.drop("Scope", axis=1)
+        # create bar chart
+        fig_2 = px.bar(df_ghg)
+        fig_2.update(layout_showlegend=False)
+        st.plotly_chart(fig_2, use_container_width=True)
+    except KeyError:
+        pass
+
 
 if __name__ == '__main__':
     app()
