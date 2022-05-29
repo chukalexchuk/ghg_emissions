@@ -44,6 +44,12 @@ def app():
         if add_extra_source:
             extra_source_selected = st.multiselect("Select additional source you want to calculate",
                                                    options=emiss_factors)
+        st.markdown("""---""")
+
+        st.write("Source: [Ministry for the Environment.]"
+                 "(https://environment.govt.nz/publications/measuring-emissions-a-guide-for-organisations-2022-detailed-guide/)"
+                 " 2022. Measuring emissions: A guide for organisations: 2022 detailed guide. "
+                 " Wellington: Ministry for the Environment.")
 
     ####################################################################################
     # Page
