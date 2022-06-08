@@ -12,7 +12,7 @@ st.set_page_config(
     page_icon=logo_page,
     layout="wide",
     menu_items={
-        # 'Get Help': '',
+        # 'Get Help': '', # links can be added to Readme file
         # 'Report a bug': "",
         'About': "Testing APP"
     }
