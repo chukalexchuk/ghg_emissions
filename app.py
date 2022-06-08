@@ -39,7 +39,7 @@ def app():
         if all_options:
             selected_sources = emiss_factors
 
-        # adding extra source of emissions
+        # adding extra source of GHG emissions
         add_extra_source = st.checkbox("Add additional source")
         if add_extra_source:
             extra_source_selected = st.multiselect("Select additional source you want to calculate",
