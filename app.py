@@ -14,7 +14,7 @@ st.set_page_config(
     menu_items={
         # 'Get Help': '', # links can be added to Readme file
         # 'Report a bug': "",
-        'About': "Testing APP"
+        'About': "New Zealand Green House Gas (GHG) Calculator"
     }
 )
 

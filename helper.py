@@ -7,39 +7,39 @@ import pandas as pd
 def calculate_emissions(data, item, count):
 
     selected_level1 = st.selectbox("Level - 1 source:",
-                                   options=(data["Level.1"][data["Level"] == item]).unique(), key=count)
+                                   options=(data["Level.1"][data["Level"] == item]).unique(), key=f"l1{count}")
 
     selected_level2 = st.selectbox("Level - 2 source",
                                    options=(data["Level.2"][data["Level.1"] == selected_level1]).unique(),
-                                   key=count)
+                                   key=f"l2{count}")
 
     selected_level3 = st.selectbox("Level - 3 source",
                                    options=(data["Level.3"][data["Level.2"] == selected_level2]).unique(),
-                                   key=count)
+                                   key=f"l3{count}")
 
     if selected_level1 == "Water supply":
         selected_text = st.selectbox("Level - 4 units",
                                      options=(
                                          data["Unit"][data["Level.1"] == selected_level1]).unique(),
-                                     key=count)
+                                     key=f"l4{count}")
 
     elif selected_level3 == "None":
         selected_text = st.selectbox("Level - 4 source",
                                      options=(
                                          data["Column Text"][data["Level.2"] == selected_level2]).unique(),
-                                     key=count)
+                                     key=f"l4_1{count}")
 
     else:
         selected_text = st.selectbox("Level - 4 source", options=(
-            data["Column Text"][data["Level.3"] == selected_level3]).unique(), key=count)
+            data["Column Text"][data["Level.3"] == selected_level3]).unique(), key=f"l4_2{count}")
 
     if item == "Water supply":
         units = selected_text
-        value = st.number_input(f"Enter value for {selected_level1} in {units}", key=count)
+        value = st.number_input(f"Enter value for {selected_level1} in {units}", key=f"water{count}")
 
     else:
         units = data["Unit"][data["Column Text"] == selected_text].unique()
-        value = st.number_input(f"Enter value for {selected_text} in {units[0]}", key=count)
+        value = st.number_input(f"Enter value for {selected_text} in {units[0]}", key=f"unit{count}")
 
     if item == "Water supply":
         ghg_emiss = data[["Scope", "GHG", "GHG Emission factor"]][
